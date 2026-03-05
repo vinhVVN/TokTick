@@ -24,6 +24,12 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
             repository.insertTask(task)
         }
     }
+
+    fun insertCategory(category: ListCategory) {
+        viewModelScope.launch {
+            repository.insertListCategory(category) // Đảm bảo repository đã có hàm này
+        }
+    }
 }
 
 // Factory để khởi tạo ViewModel có truyền tham số (Repository)

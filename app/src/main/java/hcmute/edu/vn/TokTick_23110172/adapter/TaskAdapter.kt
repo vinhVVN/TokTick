@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -19,6 +20,9 @@ class TaskAdapter : ListAdapter<TaskItem, RecyclerView.ViewHolder>(TaskDiffCallb
         private const val TYPE_HEADER = 0
         private const val TYPE_TASK = 1
     }
+
+    private val expandedStates = mutableMapOf<String, Boolean>()
+    private var lastRawTasks: List<Task> = emptyList()
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
@@ -39,33 +43,40 @@ class TaskAdapter : ListAdapter<TaskItem, RecyclerView.ViewHolder>(TaskDiffCallb
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
-        if (holder is HeaderViewHolder && item is TaskItem.Header) {
-            holder.bind(item)
-        } else if (holder is TaskViewHolder && item is TaskItem.TaskData) {
-            holder.bind(item.task)
+        when {
+            holder is HeaderViewHolder && item is TaskItem.Header -> holder.bind(item)
+            holder is TaskViewHolder && item is TaskItem.TaskData -> holder.bind(item.task)
         }
     }
 
     fun submitTaskList(tasks: List<Task>) {
+        this.lastRawTasks = tasks
         val items = mutableListOf<TaskItem>()
         
-        // 1. Sắp xếp task theo thời gian tăng dần
-        val sortedTasks = tasks.sortedBy { it.dueDate ?: Long.MAX_VALUE }
-
-        // 2. Nhóm các task dựa trên logic thời gian (Today, Tomorrow, Next 7 Days, v.v.)
-        // Sử dụng LinkedHashMap để giữ đúng thứ tự thời gian của các Header
-        val groupedTasks = sortedTasks.groupBy { task ->
-            task.dueDate?.let { getFormattedDate(it) } ?: "No Date"
+        val todayCalendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
 
-        for ((headerTitle, group) in groupedTasks) {
-            items.add(TaskItem.Header(headerTitle, group.size))
-            items.addAll(group.map { TaskItem.TaskData(it) })
+        val groupedTasks = tasks.sortedBy { it.dueDate ?: Long.MAX_VALUE }
+            .groupBy { task ->
+                task.dueDate?.let { getFormattedDate(it, todayCalendar) } ?: "Unscheduled"
+            }
+
+        for ((headerTitle, taskGroup) in groupedTasks) {
+            val isExpanded = expandedStates[headerTitle] ?: true
+            items.add(TaskItem.Header(headerTitle, taskGroup.size, isExpanded))
+
+            if (isExpanded) {
+                items.addAll(taskGroup.map { TaskItem.TaskData(it) })
+            }
         }
         submitList(items)
     }
 
-    private fun getFormattedDate(timestamp: Long): String {
+    private fun getFormattedDate(timestamp: Long, today: Calendar): String {
         val taskDate = Calendar.getInstance().apply { 
             timeInMillis = timestamp
             set(Calendar.HOUR_OF_DAY, 0)
@@ -73,15 +84,7 @@ class TaskAdapter : ListAdapter<TaskItem, RecyclerView.ViewHolder>(TaskDiffCallb
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-        
-        val today = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
 
-        // Tính toán khoảng cách ngày
         val diffMillis = taskDate.timeInMillis - today.timeInMillis
         val diffDays = (diffMillis / (24 * 60 * 60 * 1000)).toInt()
 
@@ -94,12 +97,23 @@ class TaskAdapter : ListAdapter<TaskItem, RecyclerView.ViewHolder>(TaskDiffCallb
         }
     }
 
-    class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvHeaderTitle: TextView = itemView.findViewById(R.id.tvHeaderTitle)
         private val tvTaskCount: TextView = itemView.findViewById(R.id.tvTaskCount)
+        private val ivExpandIcon: ImageView = itemView.findViewById(R.id.ivExpand) // Đã sửa ID thành ivExpand
+
         fun bind(header: TaskItem.Header) {
             tvHeaderTitle.text = header.title
             tvTaskCount.text = header.count.toString()
+
+            // Xoay icon mượt mà dựa trên trạng thái đóng/mở
+            ivExpandIcon.animate().rotation(if (header.isExpanded) 0f else -90f).setDuration(200).start()
+
+            itemView.setOnClickListener {
+                val newState = !header.isExpanded
+                expandedStates[header.title] = newState
+                submitTaskList(lastRawTasks)
+            }
         }
     }
 
@@ -110,7 +124,7 @@ class TaskAdapter : ListAdapter<TaskItem, RecyclerView.ViewHolder>(TaskDiffCallb
 
         fun bind(task: Task) {
             tvTitle.text = task.title
-            tvTime.text = task.dueTime ?: "No time"
+            tvTime.text = task.dueTime ?: ""
             cbTask.isChecked = task.isCompleted
         }
     }
