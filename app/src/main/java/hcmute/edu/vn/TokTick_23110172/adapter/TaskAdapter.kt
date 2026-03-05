@@ -10,18 +10,97 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import hcmute.edu.vn.TokTick_23110172.R
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task
+import java.text.SimpleDateFormat
+import java.util.*
 
+class TaskAdapter : ListAdapter<TaskItem, RecyclerView.ViewHolder>(TaskDiffCallback()) {
 
-class TaskAdapter : ListAdapter<Task, TaskAdapter.TaskViewHolder>(TaskDiffCallback()) {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_task, parent, false)
-        return TaskViewHolder(view)
+    companion object {
+        private const val TYPE_HEADER = 0
+        private const val TYPE_TASK = 1
     }
 
-    override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
-        val currentTask = getItem(position)
-        holder.bind(currentTask)
+    override fun getItemViewType(position: Int): Int {
+        return when (getItem(position)) {
+            is TaskItem.Header -> TYPE_HEADER
+            is TaskItem.TaskData -> TYPE_TASK
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == TYPE_HEADER) {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_date_header, parent, false)
+            HeaderViewHolder(view)
+        } else {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_task, parent, false)
+            TaskViewHolder(view)
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        if (holder is HeaderViewHolder && item is TaskItem.Header) {
+            holder.bind(item)
+        } else if (holder is TaskViewHolder && item is TaskItem.TaskData) {
+            holder.bind(item.task)
+        }
+    }
+
+    fun submitTaskList(tasks: List<Task>) {
+        val items = mutableListOf<TaskItem>()
+        
+        // 1. Sắp xếp task theo thời gian tăng dần
+        val sortedTasks = tasks.sortedBy { it.dueDate ?: Long.MAX_VALUE }
+
+        // 2. Nhóm các task dựa trên logic thời gian (Today, Tomorrow, Next 7 Days, v.v.)
+        // Sử dụng LinkedHashMap để giữ đúng thứ tự thời gian của các Header
+        val groupedTasks = sortedTasks.groupBy { task ->
+            task.dueDate?.let { getFormattedDate(it) } ?: "No Date"
+        }
+
+        for ((headerTitle, group) in groupedTasks) {
+            items.add(TaskItem.Header(headerTitle, group.size))
+            items.addAll(group.map { TaskItem.TaskData(it) })
+        }
+        submitList(items)
+    }
+
+    private fun getFormattedDate(timestamp: Long): String {
+        val taskDate = Calendar.getInstance().apply { 
+            timeInMillis = timestamp
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        // Tính toán khoảng cách ngày
+        val diffMillis = taskDate.timeInMillis - today.timeInMillis
+        val diffDays = (diffMillis / (24 * 60 * 60 * 1000)).toInt()
+
+        return when {
+            diffDays < 0 -> "Overdue"
+            diffDays == 0 -> "Today"
+            diffDays == 1 -> "Tomorrow"
+            diffDays in 2..7 -> "Next 7 Days"
+            else -> SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date(timestamp))
+        }
+    }
+
+    class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val tvHeaderTitle: TextView = itemView.findViewById(R.id.tvHeaderTitle)
+        private val tvTaskCount: TextView = itemView.findViewById(R.id.tvTaskCount)
+        fun bind(header: TaskItem.Header) {
+            tvHeaderTitle.text = header.title
+            tvTaskCount.text = header.count.toString()
+        }
     }
 
     class TaskViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -33,15 +112,18 @@ class TaskAdapter : ListAdapter<Task, TaskAdapter.TaskViewHolder>(TaskDiffCallba
             tvTitle.text = task.title
             tvTime.text = task.dueTime ?: "No time"
             cbTask.isChecked = task.isCompleted
-
         }
     }
 
-    class TaskDiffCallback : DiffUtil.ItemCallback<Task>() {
-        override fun areItemsTheSame(oldItem: Task, newItem: Task): Boolean {
-            return oldItem.id == newItem.id
+    class TaskDiffCallback : DiffUtil.ItemCallback<TaskItem>() {
+        override fun areItemsTheSame(oldItem: TaskItem, newItem: TaskItem): Boolean {
+            return if (oldItem is TaskItem.Header && newItem is TaskItem.Header) {
+                oldItem.title == newItem.title
+            } else if (oldItem is TaskItem.TaskData && newItem is TaskItem.TaskData) {
+                oldItem.task.id == newItem.task.id
+            } else false
         }
-        override fun areContentsTheSame(oldItem: Task, newItem: Task): Boolean {
+        override fun areContentsTheSame(oldItem: TaskItem, newItem: TaskItem): Boolean {
             return oldItem == newItem
         }
     }

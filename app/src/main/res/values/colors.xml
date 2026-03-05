@@ -9,4 +9,7 @@
     <color name="text_main_light">#111827</color>
     <color name="text_muted_light">#6B7280</color>
     <color name="border_light">#E5E7EB</color>
+
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
 </resources>

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository
 import kotlinx.coroutines.launch
@@ -13,6 +14,8 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
 
     // Chuyển đổi Flow từ Repository sang LiveData để UI dễ dàng quan sát (Observe)
     val allTasks: LiveData<List<Task>> = repository.allTasks.asLiveData()
+    
+    val allCategories: LiveData<List<ListCategory>> = repository.allCategories.asLiveData()
 
     // Hàm gọi khi người dùng bấm nút "Thêm"
     fun insert(task: Task) {
