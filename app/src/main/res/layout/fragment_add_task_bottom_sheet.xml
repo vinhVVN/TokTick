@@ -29,7 +29,7 @@
         android:drawablePadding="8dp"
         android:gravity="center"
         android:text="Hôm nay, 10:00"
-        android:textColor="@color/purple_500"
+        android:textColor="@color/primary_text"
         app:drawableStartCompat="@android:drawable/ic_menu_my_calendar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etTaskTitle" />
@@ -38,11 +38,23 @@
         android:id="@+id/spinnerCategory"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="12dp"
         android:minHeight="48dp"
         app:layout_constraintBottom_toBottomOf="@+id/tvSelectTime"
         app:layout_constraintStart_toEndOf="@+id/tvSelectTime"
         app:layout_constraintTop_toTopOf="@+id/tvSelectTime" />
+
+    <com.google.android.material.chip.Chip
+        android:id="@+id/chipSelectTags"
+        style="@style/Widget.MaterialComponents.Chip.Action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:text="Tag"
+        app:chipIcon="@drawable/ic_notes"
+        app:layout_constraintBottom_toBottomOf="@+id/spinnerCategory"
+        app:layout_constraintStart_toEndOf="@+id/spinnerCategory"
+        app:layout_constraintTop_toTopOf="@+id/spinnerCategory" />
 
     <ImageView
         android:id="@+id/btnSaveTask"
@@ -54,6 +66,6 @@
         app:layout_constraintBottom_toBottomOf="@+id/tvSelectTime"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/tvSelectTime"
-        app:tint="@color/purple_500" />
+        app:tint="@color/primary_text" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

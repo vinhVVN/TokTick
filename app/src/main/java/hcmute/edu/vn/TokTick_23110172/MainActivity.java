@@ -1,8 +1,12 @@
 package hcmute.edu.vn.TokTick_23110172;
 
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
@@ -20,6 +24,8 @@ import hcmute.edu.vn.TokTick_23110172.adapter.TaskAdapter;
 import hcmute.edu.vn.TokTick_23110172.data.local.dao.AppDatabase;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository;
+import hcmute.edu.vn.TokTick_23110172.viewmodel.AddListDialogFragment;
+import hcmute.edu.vn.TokTick_23110172.viewmodel.AddTagDialogFragment;
 import hcmute.edu.vn.TokTick_23110172.viewmodel.AddTaskBottomSheetFragment;
 import hcmute.edu.vn.TokTick_23110172.viewmodel.TaskViewModel;
 
@@ -46,6 +52,23 @@ public class MainActivity extends AppCompatActivity {
         sidebarAdapter = new SidebarAdapter();
         rvSidebarMenu.setAdapter(sidebarAdapter);
         rvSidebarMenu.setLayoutManager(new LinearLayoutManager(this));
+
+        // Nút Thêm trong sidebar
+        TextView tvAdd = findViewById(R.id.tvAdd);
+        if (tvAdd != null) {
+            tvAdd.setOnClickListener(v -> {
+                showAddMenu(v);
+            });
+        }
+
+        // Nút Tùy chỉnh trong sidebar
+        ImageView ivSettings = findViewById(R.id.ivSettings);
+        if (ivSettings != null) {
+            ivSettings.setOnClickListener(v -> {
+                Toast.makeText(this, "Tính năng Tùy chỉnh đang phát triển", Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(GravityCompat.START);
+            });
+        }
 
         // 2. Setup Task List (Nội dung chính)
         RecyclerView recyclerView = findViewById(R.id.rvTasks);
@@ -82,5 +105,24 @@ public class MainActivity extends AppCompatActivity {
             AddTaskBottomSheetFragment addTaskSheet = new AddTaskBottomSheetFragment();
             addTaskSheet.show(getSupportFragmentManager(), "AddTaskBottomSheet");
         });
+    }
+
+    private void showAddMenu(View v) {
+        PopupMenu popup = new PopupMenu(this, v);
+        popup.getMenu().add(0, 1, 0, "Thêm danh sách");
+        popup.getMenu().add(0, 2, 1, "Thêm thẻ (Tag)");
+
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == 1) {
+                AddListDialogFragment addListDialog = new AddListDialogFragment();
+                addListDialog.show(getSupportFragmentManager(), "AddListDialog");
+            } else if (item.getItemId() == 2) {
+                AddTagDialogFragment addTagDialog = new AddTagDialogFragment();
+                addTagDialog.show(getSupportFragmentManager(), "AddTagDialog");
+            }
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        });
+        popup.show();
     }
 }

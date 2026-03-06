@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.List;
 
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository;
 
@@ -16,11 +17,13 @@ public class TaskViewModel extends ViewModel {
     private final TaskRepository repository;
     private final LiveData<List<Task>> allTasks;
     private final LiveData<List<ListCategory>> allCategories;
+    private final LiveData<List<Tag>> allTags;
 
     public TaskViewModel(TaskRepository repository) {
         this.repository = repository;
         this.allTasks = repository.getAllTasks();
         this.allCategories = repository.getAllCategories();
+        this.allTags = repository.getAllTags();
     }
 
     public LiveData<List<Task>> getAllTasks() {
@@ -31,12 +34,20 @@ public class TaskViewModel extends ViewModel {
         return allCategories;
     }
 
+    public LiveData<List<Tag>> getAllTags() {
+        return allTags;
+    }
+
     public LiveData<List<Task>> getTasksByListId(int listId) {
         return repository.getTasksByListId(listId);
     }
 
     public void insert(Task task) {
         repository.insertTask(task);
+    }
+
+    public void insertWithTags(Task task, List<Tag> tags) {
+        repository.insertTaskWithTags(task, tags);
     }
 
     public void update(Task task) {
@@ -51,9 +62,10 @@ public class TaskViewModel extends ViewModel {
         repository.insertListCategory(category);
     }
 
-    /**
-     * Factory class để khởi tạo TaskViewModel với TaskRepository.
-     */
+    public void insertTag(Tag tag) {
+        repository.insertTag(tag);
+    }
+
     public static class TaskViewModelFactory implements ViewModelProvider.Factory {
         private final TaskRepository repository;
 

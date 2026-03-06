@@ -16,9 +16,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.android.material.chip.Chip;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -28,7 +30,9 @@ import java.util.Locale;
 
 import hcmute.edu.vn.TokTick_23110172.R;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskTagCrossRef;
 
 public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
 
@@ -38,6 +42,9 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
 
     private Integer selectedListId = null;
     private List<ListCategory> fullCategoryList = new ArrayList<>();
+    
+    private List<Tag> allTags = new ArrayList<>();
+    private final List<Tag> selectedTags = new ArrayList<>();
 
     @Nullable
     @Override
@@ -49,60 +56,35 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Khởi tạo ViewModel (Chia sẻ với Activity)
         taskViewModel = new ViewModelProvider(requireActivity()).get(TaskViewModel.class);
 
         EditText etTaskTitle = view.findViewById(R.id.etTaskTitle);
         TextView tvSelectTime = view.findViewById(R.id.tvSelectTime);
         ImageView btnSaveTask = view.findViewById(R.id.btnSaveTask);
         Spinner spinnerCategory = view.findViewById(R.id.spinnerCategory);
+        Chip chipSelectTags = view.findViewById(R.id.chipSelectTags);
 
         tvSelectTime.setText(dateFormatter.format(calendar.getTime()));
         tvSelectTime.setOnClickListener(v -> showDateTimePicker(tvSelectTime));
 
+        // Observe Categories
         taskViewModel.getAllCategories().observe(getViewLifecycleOwner(), categories -> {
             fullCategoryList = categories;
-
             List<String> displayNames = new ArrayList<>();
             for (ListCategory category : fullCategoryList) {
                 displayNames.add(category.getName());
             }
-
             ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, displayNames);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             spinnerCategory.setAdapter(adapter);
-
-            // Mặc định chọn Inbox
-            int defaultIndex = -1;
-            for (int i = 0; i < fullCategoryList.size(); i++) {
-                if (!fullCategoryList.get(i).isSmartList()) {
-                    defaultIndex = i;
-                    break;
-                }
-            }
-
-            if (defaultIndex != -1) {
-                spinnerCategory.setSelection(defaultIndex);
-                selectedListId = fullCategoryList.get(defaultIndex).getId();
-            }
         });
 
-        spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                ListCategory selectedCategory = fullCategoryList.get(position);
-
-                if (selectedCategory.isSmartList()) {
-                    updateDateBySmartList(selectedCategory.getName(), tvSelectTime);
-                    selectedListId = null;
-                } else {
-                    selectedListId = selectedCategory.getId();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+        // Observe Tags
+        taskViewModel.getAllTags().observe(getViewLifecycleOwner(), tags -> {
+            allTags = tags;
         });
+
+        chipSelectTags.setOnClickListener(v -> showTagSelectionDialog());
 
         btnSaveTask.setOnClickListener(v -> {
             String title = etTaskTitle.getText().toString().trim();
@@ -113,61 +95,89 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
                         selectedListId,
                         calendar.getTimeInMillis(),
                         timeFormatter.format(calendar.getTime()),
-                        false,
-                        false,
-                        false,
-                        false
+                        false, false, false, false
                 );
-                taskViewModel.insert(newTask);
+
+                // Cập nhật repository để trả về ID sau khi insert hoặc xử lý callback
+                // Ở đây giả định repository.insertTask trả về void nhưng gọi taskDao.insertTask(task)
+                // Để lưu được CrossRef, chúng ta cần ID của Task vừa tạo.
+                // Giải pháp: Thêm method insertTaskWithTags vào ViewModel/Repository
+                
+                saveTaskWithTags(newTask);
                 dismiss();
             } else {
                 Toast.makeText(requireContext(), "Vui lòng nhập tiêu đề!", Toast.LENGTH_SHORT).show();
             }
         });
+        
+        spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position < fullCategoryList.size()) {
+                    ListCategory selected = fullCategoryList.get(position);
+                    selectedListId = selected.isSmartList() ? null : selected.getId();
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 
-    private void updateDateBySmartList(String name, TextView tvSelectTime) {
-        Calendar now = Calendar.getInstance();
-        switch (name) {
-            case "Today":
-                calendar.set(Calendar.YEAR, now.get(Calendar.YEAR));
-                calendar.set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR));
-                break;
-            case "Tomorrow":
-                calendar.set(Calendar.YEAR, now.get(Calendar.YEAR));
-                calendar.set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR) + 1);
-                break;
-            case "Next 7 Days":
-                calendar.set(Calendar.YEAR, now.get(Calendar.YEAR));
-                calendar.set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR) + 1);
-                break;
+    private void showTagSelectionDialog() {
+        if (allTags.isEmpty()) {
+            Toast.makeText(getContext(), "Chưa có thẻ nào, hãy tạo thẻ trước!", Toast.LENGTH_SHORT).show();
+            return;
         }
-        tvSelectTime.setText(dateFormatter.format(calendar.getTime()));
+
+        String[] tagNames = new String[allTags.size()];
+        boolean[] checkedItems = new boolean[allTags.size()];
+        
+        for (int i = 0; i < allTags.size(); i++) {
+            tagNames[i] = allTags.get(i).getName();
+            checkedItems[i] = selectedTags.contains(allTags.get(i));
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Chọn thẻ (Tag)")
+                .setMultiChoiceItems(tagNames, checkedItems, (dialog, which, isChecked) -> {
+                    if (isChecked) {
+                        selectedTags.add(allTags.get(which));
+                    } else {
+                        selectedTags.remove(allTags.get(which));
+                    }
+                })
+                .setPositiveButton("OK", (dialog, which) -> {
+                    updateTagChip();
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void updateTagChip() {
+        Chip chipSelectTags = getView().findViewById(R.id.chipSelectTags);
+        if (selectedTags.isEmpty()) {
+            chipSelectTags.setText("Tag");
+        } else {
+            chipSelectTags.setText(selectedTags.size() + " thẻ đã chọn");
+        }
+    }
+
+    private void saveTaskWithTags(Task task) {
+        // Thực hiện insert task và lấy ID, sau đó insert CrossRef
+        // Để code đơn giản và chạy được với structure hiện tại, tôi sẽ thực hiện thông qua repository
+        taskViewModel.insertWithTags(task, selectedTags);
     }
 
     private void showDateTimePicker(TextView tvSelectTime) {
-        new DatePickerDialog(
-                requireContext(),
-                (view, year, month, dayOfMonth) -> {
-                    calendar.set(Calendar.YEAR, year);
-                    calendar.set(Calendar.MONTH, month);
-                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-
-                    new TimePickerDialog(
-                            requireContext(),
-                            (view1, hourOfDay, minute) -> {
-                                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                                calendar.set(Calendar.MINUTE, minute);
-                                tvSelectTime.setText(dateFormatter.format(calendar.getTime()));
-                            },
-                            calendar.get(Calendar.HOUR_OF_DAY),
-                            calendar.get(Calendar.MINUTE),
-                            true
-                    ).show();
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-        ).show();
+        new DatePickerDialog(requireContext(), (view, year, month, dayOfMonth) -> {
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            new TimePickerDialog(requireContext(), (view1, hourOfDay, minute) -> {
+                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                calendar.set(Calendar.MINUTE, minute);
+                tvSelectTime.setText(dateFormatter.format(calendar.getTime()));
+            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show();
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 }

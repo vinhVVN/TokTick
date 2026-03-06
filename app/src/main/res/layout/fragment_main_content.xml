@@ -138,12 +138,7 @@
         android:layout_gravity="start"
         android:background="@android:color/white">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvSidebarMenu"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingTop="16dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        <include layout="@layout/fragment_sidebar" />
 
     </com.google.android.material.navigation.NavigationView>
 
