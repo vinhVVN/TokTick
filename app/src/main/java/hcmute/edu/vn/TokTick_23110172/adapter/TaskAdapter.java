@@ -34,6 +34,15 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
 
     private final Map<String, Boolean> expandedStates = new HashMap<>();
     private List<Task> lastRawTasks = new ArrayList<>();
+    private OnTaskClickListener listener;
+
+    public interface OnTaskClickListener {
+        void onTaskClick(Task task);
+    }
+
+    public void setOnTaskClickListener(OnTaskClickListener listener) {
+        this.listener = listener;
+    }
 
     public TaskAdapter() {
         super(new TaskDiffCallback());
@@ -67,7 +76,7 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
         if (holder instanceof HeaderViewHolder && item instanceof TaskItem.Header) {
             ((HeaderViewHolder) holder).bind((TaskItem.Header) item);
         } else if (holder instanceof TaskViewHolder && item instanceof TaskItem.TaskData) {
-            ((TaskViewHolder) holder).bind(((TaskItem.TaskData) item).getTask());
+            ((TaskViewHolder) holder).bind(((TaskItem.TaskData) item).getTask(), listener);
         }
     }
 
@@ -179,10 +188,16 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
             cbTask = itemView.findViewById(R.id.cbTask);
         }
 
-        public void bind(Task task) {
+        public void bind(Task task, OnTaskClickListener listener) {
             tvTitle.setText(task.getTitle());
             tvTime.setText(task.getDueTime() != null ? task.getDueTime() : "");
             cbTask.setChecked(task.isCompleted());
+
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onTaskClick(task);
+                }
+            });
         }
     }
 

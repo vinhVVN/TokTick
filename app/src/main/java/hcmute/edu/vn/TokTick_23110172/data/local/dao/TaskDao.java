@@ -12,9 +12,12 @@ import androidx.room.Update;
 import java.util.List;
 
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.SubTask;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskFullDetails;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskTagCrossRef;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskWithSubtasks;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskWithTags;
 
 @Dao
@@ -54,6 +57,9 @@ public interface TaskDao {
     @Delete
     void deleteTaskTagCrossRef(TaskTagCrossRef crossRef);
 
+    @Query("DELETE FROM task_tag_cross_ref WHERE taskId = :taskId")
+    void deleteTagsForTask(int taskId);
+
     // Many-to-Many relationship query
     @Transaction
     @Query("SELECT * FROM tasks")
@@ -62,4 +68,23 @@ public interface TaskDao {
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     LiveData<TaskWithTags> getTaskWithTagsById(int taskId);
+
+    // Subtask methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertSubTasks(List<SubTask> subTasks);
+
+    @Delete
+    void deleteSubTask(SubTask subTask);
+
+    @Transaction
+    @Query("SELECT * FROM tasks")
+    LiveData<List<TaskWithSubtasks>> getTasksWithSubtasks();
+
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    LiveData<TaskWithSubtasks> getTaskWithSubtasksById(int taskId);
+
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    LiveData<TaskFullDetails> getTaskFullDetailsById(int taskId);
 }

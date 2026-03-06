@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,6 +24,7 @@ import hcmute.edu.vn.TokTick_23110172.adapter.SidebarItem;
 import hcmute.edu.vn.TokTick_23110172.adapter.TaskAdapter;
 import hcmute.edu.vn.TokTick_23110172.data.local.dao.AppDatabase;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository;
 import hcmute.edu.vn.TokTick_23110172.viewmodel.AddListDialogFragment;
 import hcmute.edu.vn.TokTick_23110172.viewmodel.AddTagDialogFragment;
@@ -76,6 +78,11 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(taskAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Thiết lập sự kiện click vào task để mở màn hình chi tiết
+        taskAdapter.setOnTaskClickListener(task -> {
+            openTaskDetail(task.getId());
+        });
+
         // 3. Observe Categories để cập nhật Sidebar
         taskViewModel.getAllCategories().observe(this, categories -> {
             List<SidebarItem> sidebarItems = new ArrayList<>();
@@ -105,6 +112,18 @@ public class MainActivity extends AppCompatActivity {
             AddTaskBottomSheetFragment addTaskSheet = new AddTaskBottomSheetFragment();
             addTaskSheet.show(getSupportFragmentManager(), "AddTaskBottomSheet");
         });
+    }
+
+    private void openTaskDetail(int taskId) {
+        TaskDetailFragment detailFragment = TaskDetailFragment.newInstance(taskId);
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        
+        // Sử dụng một ID container phù hợp. Ở đây DrawerLayout là root, 
+        // nhưng chúng ta muốn đè lên nội dung chính.
+        // Tạm thời dùng android.R.id.content hoặc một FrameLayout nếu có.
+        transaction.replace(android.R.id.content, detailFragment); 
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     private void showAddMenu(View v) {

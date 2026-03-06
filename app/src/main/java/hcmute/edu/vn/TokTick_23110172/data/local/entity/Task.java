@@ -1,5 +1,6 @@
 package hcmute.edu.vn.TokTick_23110172.data.local.entity;
 
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
@@ -19,19 +20,25 @@ public class Task {
     @PrimaryKey(autoGenerate = true)
     private int id;
     private String title;
+    @Nullable
     private Integer listId;      // Foreign key, nullable
+    @Nullable
     private Long dueDate;        // Timestamp, nullable
+    @Nullable
     private String dueTime;      // Example: "07:00", nullable
+    @Nullable
+    private String notes;        // New field for notes
     private boolean isCompleted;
     private boolean hasNotes;
     private boolean hasAlarm;
     private boolean hasAttachment;
 
-    public Task(String title, Integer listId, Long dueDate, String dueTime, boolean isCompleted, boolean hasNotes, boolean hasAlarm, boolean hasAttachment) {
+    public Task(String title, @Nullable Integer listId, @Nullable Long dueDate, @Nullable String dueTime, @Nullable String notes, boolean isCompleted, boolean hasNotes, boolean hasAlarm, boolean hasAttachment) {
         this.title = title;
         this.listId = listId;
         this.dueDate = dueDate;
         this.dueTime = dueTime;
+        this.notes = notes;
         this.isCompleted = isCompleted;
         this.hasNotes = hasNotes;
         this.hasAlarm = hasAlarm;
@@ -56,28 +63,40 @@ public class Task {
         this.title = title;
     }
 
+    @Nullable
     public Integer getListId() {
         return listId;
     }
 
-    public void setListId(Integer listId) {
+    public void setListId(@Nullable Integer listId) {
         this.listId = listId;
     }
 
+    @Nullable
     public Long getDueDate() {
         return dueDate;
     }
 
-    public void setDueDate(Long dueDate) {
+    public void setDueDate(@Nullable Long dueDate) {
         this.dueDate = dueDate;
     }
 
+    @Nullable
     public String getDueTime() {
         return dueTime;
     }
 
-    public void setDueTime(String dueTime) {
+    public void setDueTime(@Nullable String dueTime) {
         this.dueTime = dueTime;
+    }
+
+    @Nullable
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(@Nullable String notes) {
+        this.notes = notes;
     }
 
     public boolean isCompleted() {

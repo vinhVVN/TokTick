@@ -12,11 +12,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.SubTask;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskTagCrossRef;
 
-@Database(entities = {Task.class, ListCategory.class, Tag.class, TaskTagCrossRef.class}, version = 7, exportSchema = false)
+@Database(entities = {Task.class, ListCategory.class, Tag.class, TaskTagCrossRef.class, SubTask.class}, version = 9, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TaskDao taskDao();
@@ -82,6 +83,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 (int) inboxId,
                 null,
                 null,
+                null, // notes
                 false,
                 false,
                 false,

@@ -8,8 +8,11 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.List;
 
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.SubTask;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskFullDetails;
+import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskWithSubtasks;
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository;
 
 public class TaskViewModel extends ViewModel {
@@ -42,6 +45,14 @@ public class TaskViewModel extends ViewModel {
         return repository.getTasksByListId(listId);
     }
 
+    public LiveData<TaskWithSubtasks> getTaskWithSubtasksById(int taskId) {
+        return repository.getTaskWithSubtasksById(taskId);
+    }
+
+    public LiveData<TaskFullDetails> getTaskFullDetailsById(int taskId) {
+        return repository.getTaskFullDetailsById(taskId);
+    }
+
     public void insert(Task task) {
         repository.insertTask(task);
     }
@@ -50,12 +61,28 @@ public class TaskViewModel extends ViewModel {
         repository.insertTaskWithTags(task, tags);
     }
 
+    public void insertTaskWithDetails(Task task, List<Tag> tags, List<String> subTasks) {
+        repository.insertTaskWithDetails(task, tags, subTasks);
+    }
+
     public void update(Task task) {
         repository.updateTask(task);
     }
 
+    public void updateTaskWithSubtasks(Task task, List<SubTask> subTasks) {
+        repository.updateTaskWithSubtasks(task, subTasks);
+    }
+
+    public void updateTaskFullDetails(Task task, List<SubTask> subTasks, List<Tag> tags) {
+        repository.updateTaskFullDetails(task, subTasks, tags);
+    }
+
     public void delete(Task task) {
         repository.deleteTask(task);
+    }
+
+    public void deleteSubTask(SubTask subTask) {
+        repository.deleteSubTask(subTask);
     }
 
     public void insertCategory(ListCategory category) {

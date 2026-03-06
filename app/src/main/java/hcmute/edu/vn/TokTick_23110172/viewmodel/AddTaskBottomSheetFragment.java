@@ -2,10 +2,12 @@ package hcmute.edu.vn.TokTick_23110172.viewmodel;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -18,6 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.chip.Chip;
@@ -29,10 +33,10 @@ import java.util.List;
 import java.util.Locale;
 
 import hcmute.edu.vn.TokTick_23110172.R;
+import hcmute.edu.vn.TokTick_23110172.adapter.SubtaskInputAdapter;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
-import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskTagCrossRef;
 
 public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
 
@@ -45,6 +49,9 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
     
     private List<Tag> allTags = new ArrayList<>();
     private final List<Tag> selectedTags = new ArrayList<>();
+
+    private SubtaskInputAdapter subtaskAdapter;
+    private final List<String> subtaskList = new ArrayList<>();
 
     @Nullable
     @Override
@@ -63,6 +70,25 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
         ImageView btnSaveTask = view.findViewById(R.id.btnSaveTask);
         Spinner spinnerCategory = view.findViewById(R.id.spinnerCategory);
         Chip chipSelectTags = view.findViewById(R.id.chipSelectTags);
+        
+        RecyclerView rvSubtasksInput = view.findViewById(R.id.rvSubtasksInput);
+        ImageView btnAddSubtaskItem = view.findViewById(R.id.btnAddSubtaskItem);
+
+        // Setup Subtasks RecyclerView
+        subtaskAdapter = new SubtaskInputAdapter(subtaskList);
+        rvSubtasksInput.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvSubtasksInput.setAdapter(subtaskAdapter);
+
+        btnAddSubtaskItem.setOnClickListener(v -> {
+            rvSubtasksInput.setVisibility(View.VISIBLE);
+            subtaskAdapter.addSubtask();
+            etTaskTitle.postDelayed(() -> {
+                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+                }
+            }, 100);
+        });
 
         tvSelectTime.setText(dateFormatter.format(calendar.getTime()));
         tvSelectTime.setOnClickListener(v -> showDateTimePicker(tvSelectTime));
@@ -95,15 +121,19 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
                         selectedListId,
                         calendar.getTimeInMillis(),
                         timeFormatter.format(calendar.getTime()),
-                        false, false, false, false
+                        null, // notes
+                        false, 
+                        false, 
+                        false, 
+                        false
                 );
 
-                // Cập nhật repository để trả về ID sau khi insert hoặc xử lý callback
-                // Ở đây giả định repository.insertTask trả về void nhưng gọi taskDao.insertTask(task)
-                // Để lưu được CrossRef, chúng ta cần ID của Task vừa tạo.
-                // Giải pháp: Thêm method insertTaskWithTags vào ViewModel/Repository
+                // Get current subtasks from adapter
+                List<String> currentSubtasks = subtaskAdapter.getSubtasks();
+
+                // Save Task with Tags and Subtasks
+                taskViewModel.insertTaskWithDetails(newTask, selectedTags, currentSubtasks);
                 
-                saveTaskWithTags(newTask);
                 dismiss();
             } else {
                 Toast.makeText(requireContext(), "Vui lòng nhập tiêu đề!", Toast.LENGTH_SHORT).show();
@@ -154,18 +184,14 @@ public class AddTaskBottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     private void updateTagChip() {
-        Chip chipSelectTags = getView().findViewById(R.id.chipSelectTags);
-        if (selectedTags.isEmpty()) {
-            chipSelectTags.setText("Tag");
-        } else {
-            chipSelectTags.setText(selectedTags.size() + " thẻ đã chọn");
+        if (getView() != null) {
+            Chip chipSelectTags = getView().findViewById(R.id.chipSelectTags);
+            if (selectedTags.isEmpty()) {
+                chipSelectTags.setText("Tag");
+            } else {
+                chipSelectTags.setText(selectedTags.size() + " thẻ đã chọn");
+            }
         }
-    }
-
-    private void saveTaskWithTags(Task task) {
-        // Thực hiện insert task và lấy ID, sau đó insert CrossRef
-        // Để code đơn giản và chạy được với structure hiện tại, tôi sẽ thực hiện thông qua repository
-        taskViewModel.insertWithTags(task, selectedTags);
     }
 
     private void showDateTimePicker(TextView tvSelectTime) {
