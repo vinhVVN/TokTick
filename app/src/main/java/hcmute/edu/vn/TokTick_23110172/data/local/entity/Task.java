@@ -5,6 +5,8 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
+import java.util.Objects;
+
 @Entity(
         tableName = "tasks",
         foreignKeys = {
@@ -129,5 +131,27 @@ public class Task {
 
     public void setHasAttachment(boolean hasAttachment) {
         this.hasAttachment = hasAttachment;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Task task = (Task) o;
+        return id == task.id &&
+                isCompleted == task.isCompleted &&
+                hasNotes == task.hasNotes &&
+                hasAlarm == task.hasAlarm &&
+                hasAttachment == task.hasAttachment &&
+                Objects.equals(title, task.title) &&
+                Objects.equals(listId, task.listId) &&
+                Objects.equals(dueDate, task.dueDate) &&
+                Objects.equals(dueTime, task.dueTime) &&
+                Objects.equals(notes, task.notes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, title, listId, dueDate, dueTime, notes, isCompleted, hasNotes, hasAlarm, hasAttachment);
     }
 }

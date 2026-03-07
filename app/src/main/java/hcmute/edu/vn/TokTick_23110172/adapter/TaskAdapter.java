@@ -1,5 +1,7 @@
 package hcmute.edu.vn.TokTick_23110172.adapter;
 
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,10 +21,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import hcmute.edu.vn.TokTick_23110172.R;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
@@ -33,6 +37,7 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
     private static final int TYPE_TASK = 1;
 
     private final Map<String, Boolean> expandedStates = new HashMap<>();
+    private final Set<Integer> excludedTaskIds = new HashSet<>();
     private List<Task> lastRawTasks = new ArrayList<>();
     private OnTaskClickListener listener;
 
@@ -80,9 +85,35 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
         }
     }
 
+    public void setTaskExcluded(int taskId, boolean excluded) {
+        if (excluded) {
+            excludedTaskIds.add(taskId);
+        } else {
+            excludedTaskIds.remove(taskId);
+        }
+        if (lastRawTasks != null) {
+            submitTaskList(lastRawTasks);
+        }
+    }
+
     public void submitTaskList(List<Task> tasks) {
         this.lastRawTasks = tasks;
         List<TaskItem> items = new ArrayList<>();
+
+        List<Task> activeTasks = new ArrayList<>();
+        List<Task> completedTasks = new ArrayList<>();
+
+        // Tách danh sách thành Active và Completed, đồng thời lọc bỏ các task bị tạm ẩn
+        for (Task task : tasks) {
+            if (excludedTaskIds.contains(task.getId())) {
+                continue;
+            }
+            if (task.isCompleted()) {
+                completedTasks.add(task);
+            } else {
+                activeTasks.add(task);
+            }
+        }
 
         Calendar todayCalendar = Calendar.getInstance();
         todayCalendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -90,8 +121,8 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
         todayCalendar.set(Calendar.SECOND, 0);
         todayCalendar.set(Calendar.MILLISECOND, 0);
 
-        List<Task> sortedTasks = new ArrayList<>(tasks);
-        Collections.sort(sortedTasks, new Comparator<Task>() {
+        // 1. Xử lý Active Tasks: Sắp xếp và phân nhóm theo Ngày
+        Collections.sort(activeTasks, new Comparator<Task>() {
             @Override
             public int compare(Task t1, Task t2) {
                 Long d1 = t1.getDueDate() != null ? t1.getDueDate() : Long.MAX_VALUE;
@@ -100,16 +131,16 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
             }
         });
 
-        Map<String, List<Task>> groupedTasks = new LinkedHashMap<>();
-        for (Task task : sortedTasks) {
+        Map<String, List<Task>> groupedActiveTasks = new LinkedHashMap<>();
+        for (Task task : activeTasks) {
             String headerTitle = task.getDueDate() != null ? getFormattedDate(task.getDueDate(), todayCalendar) : "Unscheduled";
-            if (!groupedTasks.containsKey(headerTitle)) {
-                groupedTasks.put(headerTitle, new ArrayList<>());
+            if (!groupedActiveTasks.containsKey(headerTitle)) {
+                groupedActiveTasks.put(headerTitle, new ArrayList<>());
             }
-            groupedTasks.get(headerTitle).add(task);
+            groupedActiveTasks.get(headerTitle).add(task);
         }
 
-        for (Map.Entry<String, List<Task>> entry : groupedTasks.entrySet()) {
+        for (Map.Entry<String, List<Task>> entry : groupedActiveTasks.entrySet()) {
             String headerTitle = entry.getKey();
             List<Task> taskGroup = entry.getValue();
             
@@ -124,6 +155,22 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
                 }
             }
         }
+
+        // 2. Xử lý Completed Tasks: Một Header duy nhất ở dưới cùng
+        if (!completedTasks.isEmpty()) {
+            String completedHeader = "Hoàn thành";
+            Boolean isExpanded = expandedStates.get(completedHeader);
+            if (isExpanded == null) isExpanded = false; // Mặc định thu gọn
+
+            items.add(new TaskItem.Header(completedHeader, completedTasks.size(), isExpanded));
+
+            if (isExpanded) {
+                for (Task task : completedTasks) {
+                    items.add(new TaskItem.TaskData(task));
+                }
+            }
+        }
+
         submitList(items);
     }
 
@@ -176,7 +223,7 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
         }
     }
 
-    static class TaskViewHolder extends RecyclerView.ViewHolder {
+    public static class TaskViewHolder extends RecyclerView.ViewHolder {
         private final TextView tvTitle;
         private final TextView tvTime;
         private final CheckBox cbTask;
@@ -192,6 +239,15 @@ public class TaskAdapter extends ListAdapter<TaskItem, RecyclerView.ViewHolder> 
             tvTitle.setText(task.getTitle());
             tvTime.setText(task.getDueTime() != null ? task.getDueTime() : "");
             cbTask.setChecked(task.isCompleted());
+
+            // Thay đổi UI khi hoàn thành
+            if (task.isCompleted()) {
+                tvTitle.setTextColor(Color.GRAY);
+                tvTitle.setPaintFlags(tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else {
+                tvTitle.setTextColor(Color.BLACK); // Reset về màu mặc định
+                tvTitle.setPaintFlags(tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            }
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

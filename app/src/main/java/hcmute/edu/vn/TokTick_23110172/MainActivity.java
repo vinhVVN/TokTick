@@ -1,6 +1,7 @@
 package hcmute.edu.vn.TokTick_23110172;
 
 import android.os.Bundle;
+import android.view.HapticFeedbackConstants;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -13,8 +14,11 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +26,8 @@ import java.util.List;
 import hcmute.edu.vn.TokTick_23110172.adapter.SidebarAdapter;
 import hcmute.edu.vn.TokTick_23110172.adapter.SidebarItem;
 import hcmute.edu.vn.TokTick_23110172.adapter.TaskAdapter;
+import hcmute.edu.vn.TokTick_23110172.adapter.TaskItem;
+import hcmute.edu.vn.TokTick_23110172.adapter.TaskSwipeCallback;
 import hcmute.edu.vn.TokTick_23110172.data.local.dao.AppDatabase;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
@@ -36,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private TaskViewModel taskViewModel;
     private DrawerLayout drawerLayout;
     private SidebarAdapter sidebarAdapter;
+    private TaskAdapter taskAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 2. Setup Task List (Nội dung chính)
         RecyclerView recyclerView = findViewById(R.id.rvTasks);
-        TaskAdapter taskAdapter = new TaskAdapter();
+        taskAdapter = new TaskAdapter();
         recyclerView.setAdapter(taskAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -82,6 +89,9 @@ public class MainActivity extends AppCompatActivity {
         taskAdapter.setOnTaskClickListener(task -> {
             openTaskDetail(task.getId());
         });
+
+        // Tích hợp Swipe cho Task List
+        setupSwipe(recyclerView);
 
         // 3. Observe Categories để cập nhật Sidebar
         taskViewModel.getAllCategories().observe(this, categories -> {
@@ -114,13 +124,65 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setupSwipe(RecyclerView recyclerView) {
+        TaskSwipeCallback swipeCallback = new TaskSwipeCallback(this, new TaskSwipeCallback.SwipeListener() {
+            @Override
+            public void onSwipeToTick(int position) {
+                if (position < 0 || position >= taskAdapter.getItemCount()) return;
+                TaskItem item = taskAdapter.getCurrentList().get(position);
+                if (item instanceof TaskItem.TaskData) {
+                    Task task = ((TaskItem.TaskData) item).getTask();
+                    task.setCompleted(true);
+                    
+                    // Hiệu ứng rung nhẹ
+                    recyclerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                    
+                    taskViewModel.update(task);
+                    Toast.makeText(MainActivity.this, "Đã hoàn thành công việc", Toast.LENGTH_SHORT).show();
+                }
+                
+                // LUÔN LUÔN thông báo notifyItemChanged để reset trạng thái vuốt (mất nền màu)
+                taskAdapter.notifyItemChanged(position);
+            }
+
+            @Override
+            public void onSwipeToDelete(int position) {
+                if (position < 0 || position >= taskAdapter.getItemCount()) return;
+                TaskItem item = taskAdapter.getCurrentList().get(position);
+                if (item instanceof TaskItem.TaskData) {
+                    Task task = ((TaskItem.TaskData) item).getTask();
+
+                    // Sử dụng logic tạm ẩn để tránh xung đột với LiveData
+                    taskAdapter.setTaskExcluded(task.getId(), true);
+
+                    Snackbar.make(recyclerView, "Đã xóa công việc", Snackbar.LENGTH_LONG)
+                            .setAction("Hoàn tác", v -> {
+                                taskAdapter.setTaskExcluded(task.getId(), false);
+                            })
+                            .addCallback(new Snackbar.Callback() {
+                                @Override
+                                public void onDismissed(Snackbar transientBottomBar, int event) {
+                                    if (event != DISMISS_EVENT_ACTION) {
+                                        taskViewModel.delete(task);
+                                    }
+                                }
+                            }).show();
+                } else {
+                    taskAdapter.notifyItemChanged(position);
+                }
+            }
+        });
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipeCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
+
     private void openTaskDetail(int taskId) {
         TaskDetailFragment detailFragment = TaskDetailFragment.newInstance(taskId);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         
         // Sử dụng một ID container phù hợp. Ở đây DrawerLayout là root, 
         // nhưng chúng ta muốn đè lên nội dung chính.
-        // Tạm thời dùng android.R.id.content hoặc một FrameLayout nếu có.
         transaction.replace(android.R.id.content, detailFragment); 
         transaction.addToBackStack(null);
         transaction.commit();
