@@ -25,7 +25,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".ui.fragment.ManageListTagActivity"
+            android:name=".ManageListTagActivity"
             android:exported="false" />
 
         <activity

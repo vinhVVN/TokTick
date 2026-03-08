@@ -48,6 +48,11 @@ public class ManageTagsFragment extends Fragment {
             for (Tag tag : tags) {
                 items.add(new ManageAdapter.Item() {
                     @Override
+                    public int getId() {
+                        return tag.getTagId();
+                    }
+
+                    @Override
                     public String getName() {
                         return tag.getName();
                     }

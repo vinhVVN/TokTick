@@ -39,7 +39,6 @@ public class EditListActivity extends AppCompatActivity {
         etListName = findViewById(R.id.etListName);
         tvEditEmoji = findViewById(R.id.tvEditEmoji);
         ImageButton btnClose = findViewById(R.id.btnClose);
-        ImageButton btnSave = findViewById(R.id.btnSave);
         ImageButton btnMore = findViewById(R.id.btnMore);
 
         listId = getIntent().getIntExtra("LIST_ID", -1);
@@ -54,19 +53,8 @@ public class EditListActivity extends AppCompatActivity {
             });
         }
 
-        btnClose.setOnClickListener(v -> finish());
-
-        btnSave.setOnClickListener(v -> {
-            if (currentCategory != null) {
-                String newName = etListName.getText().toString().trim();
-                if (!newName.isEmpty()) {
-                    currentCategory.setName(newName);
-                    currentCategory.setIconName(tvEditEmoji.getText().toString());
-                    taskViewModel.updateListCategory(currentCategory);
-                    Toast.makeText(this, "Đã lưu thay đổi", Toast.LENGTH_SHORT).show();
-                    finish();
-                }
-            }
+        btnClose.setOnClickListener(v -> {
+            saveAndExit();
         });
 
         btnMore.setOnClickListener(this::showMoreOptions);
@@ -78,6 +66,25 @@ public class EditListActivity extends AppCompatActivity {
             });
             emojiPicker.show(getSupportFragmentManager(), "EmojiPicker");
         });
+    }
+
+    private void saveAndExit() {
+        if (currentCategory != null) {
+            String newName = etListName.getText().toString().trim();
+            if (!newName.isEmpty()) {
+                currentCategory.setName(newName);
+                currentCategory.setIconName(tvEditEmoji.getText().toString());
+                taskViewModel.updateListCategory(currentCategory);
+                // Toast.makeText(this, "Đã lưu thay đổi", Toast.LENGTH_SHORT).show();
+            }
+        }
+        finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        saveAndExit();
+        super.onBackPressed();
     }
 
     private void showMoreOptions(android.view.View v) {

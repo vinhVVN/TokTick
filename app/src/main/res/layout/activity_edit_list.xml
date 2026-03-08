@@ -43,14 +43,6 @@
                 android:orientation="horizontal">
 
                 <ImageButton
-                    android:id="@+id/btnSave"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/abc_ic_go_search_api_material"
-                    app:tint="@color/black" />
-
-                <ImageButton
                     android:id="@+id/btnMore"
                     android:layout_width="48dp"
                     android:layout_height="48dp"

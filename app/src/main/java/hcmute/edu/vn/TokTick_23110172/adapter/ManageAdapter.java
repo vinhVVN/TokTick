@@ -15,12 +15,22 @@ import hcmute.edu.vn.TokTick_23110172.R;
 
 public class ManageAdapter extends RecyclerView.Adapter<ManageAdapter.ViewHolder> {
 
+    public interface OnItemClickListener {
+        void onItemClick(Item item);
+    }
+
     public interface Item {
+        int getId();
         String getName();
         String getIcon();
     }
 
     private List<Item> items = new ArrayList<>();
+    private OnItemClickListener listener;
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
+    }
 
     public void setItems(List<? extends Item> newItems) {
         this.items.clear();
@@ -40,6 +50,12 @@ public class ManageAdapter extends RecyclerView.Adapter<ManageAdapter.ViewHolder
         Item item = items.get(position);
         holder.tvName.setText(item.getName());
         holder.tvIcon.setText(item.getIcon());
+        
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(item);
+            }
+        });
     }
 
     @Override
