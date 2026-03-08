@@ -12,4 +12,10 @@
 
     <color name="purple_500">#6200EE</color>
     <color name="purple_700">#3700B3</color>
+
+    <!-- Sidebar Colors -->
+    <color name="sidebar_bg">#F8F9FE</color>
+    <color name="sidebar_item_activated_bg">#E8EAF6</color>
+    <color name="sidebar_item_activated_text">#3F51B5</color>
+    <color name="sidebar_header_text">#9CA3AF</color>
 </resources>

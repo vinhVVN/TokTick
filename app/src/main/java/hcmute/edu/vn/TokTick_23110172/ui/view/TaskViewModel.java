@@ -5,8 +5,11 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
+import hcmute.edu.vn.TokTick_23110172.adapter.SidebarItem;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.SubTask;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
@@ -39,6 +42,85 @@ public class TaskViewModel extends ViewModel {
 
     public LiveData<List<Tag>> getAllTags() {
         return allTags;
+    }
+
+    public List<SidebarItem> generateSidebarItems(List<Task> allTasks, List<ListCategory> userLists) {
+        List<SidebarItem> items = new ArrayList<>();
+
+        int todayCount = 0;
+        int tomorrowCount = 0;
+        int next7DaysCount = 0;
+        int thisWeekCount = 0;
+        int unscheduledCount = 0;
+
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long todayStart = cal.getTimeInMillis();
+
+        cal.add(Calendar.DAY_OF_YEAR, 1);
+        long tomorrowStart = cal.getTimeInMillis();
+
+        cal.add(Calendar.DAY_OF_YEAR, 1);
+        long dayAfterTomorrowStart = cal.getTimeInMillis();
+
+        cal.setTimeInMillis(todayStart);
+        cal.add(Calendar.DAY_OF_YEAR, 7);
+        long next7DaysEnd = cal.getTimeInMillis();
+
+        cal.setTimeInMillis(todayStart);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        // Giả sử tuần bắt đầu từ Thứ 2 (Monday = 2)
+        int daysUntilEndOfWeek = (8 - dayOfWeek) % 7;
+        if (daysUntilEndOfWeek == 0) daysUntilEndOfWeek = 7;
+        cal.add(Calendar.DAY_OF_YEAR, daysUntilEndOfWeek);
+        long endOfWeek = cal.getTimeInMillis();
+
+        for (Task task : allTasks) {
+            if (task.isCompleted()) continue;
+
+            Long dueDate = task.getDueDate();
+            if (dueDate == null) {
+                unscheduledCount++;
+            } else {
+                if (dueDate >= todayStart && dueDate < tomorrowStart) {
+                    todayCount++;
+                } else if (dueDate >= tomorrowStart && dueDate < dayAfterTomorrowStart) {
+                    tomorrowCount++;
+                }
+
+                if (dueDate >= todayStart && dueDate < next7DaysEnd) {
+                    next7DaysCount++;
+                }
+                if (dueDate >= todayStart && dueDate < endOfWeek) {
+                    thisWeekCount++;
+                }
+            }
+        }
+
+        // 1. Header Filters - Sử dụng các icon hiện có trong drawable
+        items.add(SidebarItem.createHeader("FILTERS"));
+        items.add(SidebarItem.createSmartFilter(SidebarItem.ID_TODAY, "Today", "ic_alarm", todayCount));
+        items.add(SidebarItem.createSmartFilter(SidebarItem.ID_TOMORROW, "Tomorrow", "ic_alarm", tomorrowCount));
+        items.add(SidebarItem.createSmartFilter(SidebarItem.ID_NEXT_7_DAYS, "Next 7 Days", "ic_notes", next7DaysCount));
+        items.add(SidebarItem.createSmartFilter(SidebarItem.ID_THIS_WEEK, "This Week", "ic_notes", thisWeekCount));
+        items.add(SidebarItem.createSmartFilter(SidebarItem.ID_UNSCHEDULED, "Unscheduled", "ic_attach_file", unscheduledCount));
+
+        // 2. Header Lists
+        items.add(SidebarItem.createHeader("LISTS"));
+        for (ListCategory category : userLists) {
+            int count = 0;
+            for (Task task : allTasks) {
+                if (!task.isCompleted() && task.getListId() != null && task.getListId() == category.getId()) {
+                    count++;
+                }
+            }
+            items.add(SidebarItem.createUserList(category, count));
+        }
+
+        return items;
     }
 
     public void updateListCategories(List<ListCategory> categories) {

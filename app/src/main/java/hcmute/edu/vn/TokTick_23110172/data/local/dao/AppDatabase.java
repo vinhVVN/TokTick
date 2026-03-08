@@ -70,10 +70,8 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     private static void populateDatabase(TaskDao taskDao) {
-        taskDao.insertListCategory(new ListCategory("Today", "ic_today", true));
-        taskDao.insertListCategory(new ListCategory("Tomorrow", "ic_tomorrow", true));
-        taskDao.insertListCategory(new ListCategory("Next 7 Days", "ic_next7", true));
-
+        // Chỉ insert các mục mặc định như 'Inbox', 'Work Tasks'.
+        // XÓA BỎ việc insert các mục 'Today', 'Tomorrow', 'Next 7 Days' vào bảng ListCategory.
         long inboxId = taskDao.insertListCategory(new ListCategory("Inbox", "ic_inbox", false));
         taskDao.insertListCategory(new ListCategory("Work Tasks", "ic_work", false));
         taskDao.insertListCategory(new ListCategory("Study Goals", "ic_study", false));

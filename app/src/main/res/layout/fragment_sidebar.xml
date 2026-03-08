@@ -4,24 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/sidebar_bg">
 
-    <!-- RecyclerView chiếm toàn bộ phần trên -->
-
-    <!-- Đường kẻ ngang mỏng phân cách Footer -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvSidebarMenu"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
+        android:paddingHorizontal="12dp"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toTopOf="@+id/dividerFooter"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
         tools:listitem="@layout/item_sidebar_menu" />
 
     <View
@@ -33,7 +29,6 @@
         android:background="@color/border_light"
         app:layout_constraintBottom_toTopOf="@+id/layoutFooter" />
 
-    <!-- Phần Footer -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutFooter"
         android:layout_width="match_parent"
@@ -41,7 +36,6 @@
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Nút Thêm bên trái -->
         <TextView
             android:id="@+id/tvAdd"
             android:layout_width="wrap_content"
@@ -60,7 +54,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Nút Tùy chỉnh bên phải -->
         <ImageView
             android:id="@+id/ivSettings"
             android:layout_width="24dp"

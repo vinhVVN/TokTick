@@ -1,56 +1,55 @@
 package hcmute.edu.vn.TokTick_23110172.adapter;
 
-import java.util.Objects;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
 
-public abstract class SidebarItem {
-    public static class Header extends SidebarItem {
-        private final String title;
+public class SidebarItem {
+    public static final int TYPE_HEADER = 0;
+    public static final int TYPE_SMART_FILTER = 1;
+    public static final int TYPE_USER_LIST = 2;
 
-        public Header(String title) {
-            this.title = title;
-        }
+    public int type;
+    public String headerText; // Cho TYPE_HEADER
 
-        public String getTitle() { return title; }
+    // Cho TYPE_SMART_FILTER
+    public int smartFilterId;
+    public String smartFilterName;
+    public String smartFilterIcon;
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Header header = (Header) o;
-            return Objects.equals(title, header.title);
-        }
+    // Cho TYPE_USER_LIST
+    public ListCategory userList;
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(title);
-        }
+    public int taskCount;
+
+    // Các ID cho Smart Filters
+    public static final int ID_TODAY = 101;
+    public static final int ID_TOMORROW = 102;
+    public static final int ID_NEXT_7_DAYS = 103;
+    public static final int ID_THIS_WEEK = 104;
+    public static final int ID_UNSCHEDULED = 105;
+
+    private SidebarItem(int type) {
+        this.type = type;
     }
 
-    public static class MenuItem extends SidebarItem {
-        private final ListCategory category;
-        private final int taskCount;
+    public static SidebarItem createHeader(String text) {
+        SidebarItem item = new SidebarItem(TYPE_HEADER);
+        item.headerText = text;
+        return item;
+    }
 
-        public MenuItem(ListCategory category, int taskCount) {
-            this.category = category;
-            this.taskCount = taskCount;
-        }
+    public static SidebarItem createSmartFilter(int id, String name, String icon, int count) {
+        SidebarItem item = new SidebarItem(TYPE_SMART_FILTER);
+        item.smartFilterId = id;
+        item.smartFilterName = name;
+        item.smartFilterIcon = icon;
+        item.taskCount = count;
+        return item;
+    }
 
-        public ListCategory getCategory() { return category; }
-        public int getTaskCount() { return taskCount; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            MenuItem menuItem = (MenuItem) o;
-            return taskCount == menuItem.taskCount && Objects.equals(category, menuItem.category);
-        }
-
-        @Override
-        public int hashCode() {
-
-            return Objects.hash(category, taskCount);
-        }
+    public static SidebarItem createUserList(ListCategory listCategory, int count) {
+        SidebarItem item = new SidebarItem(TYPE_USER_LIST);
+        item.userList = listCategory;
+        item.taskCount = count;
+        return item;
     }
 }

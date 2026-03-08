@@ -21,7 +21,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import hcmute.edu.vn.TokTick_23110172.adapter.SidebarAdapter;
 import hcmute.edu.vn.TokTick_23110172.adapter.SidebarItem;
@@ -46,6 +48,11 @@ public class MainActivity extends AppCompatActivity {
     private SidebarAdapter sidebarAdapter;
     private TaskAdapter taskAdapter;
 
+    private List<Task> fullTaskList = new ArrayList<>();
+    private List<ListCategory> allCategories = new ArrayList<>();
+    private int currentFilterId = SidebarItem.ID_TODAY;
+    private boolean isSmartFilter = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,7 +67,23 @@ public class MainActivity extends AppCompatActivity {
         // 1. Setup Drawer và Sidebar
         drawerLayout = findViewById(R.id.drawerLayout);
         RecyclerView rvSidebarMenu = findViewById(R.id.rvSidebarMenu);
-        sidebarAdapter = new SidebarAdapter();
+        sidebarAdapter = new SidebarAdapter(new SidebarAdapter.OnSidebarItemClickListener() {
+            @Override
+            public void onSmartFilterClick(int smartFilterId) {
+                currentFilterId = smartFilterId;
+                isSmartFilter = true;
+                applyFilter();
+                drawerLayout.closeDrawer(GravityCompat.START);
+            }
+
+            @Override
+            public void onUserListClick(int listCategoryId) {
+                currentFilterId = listCategoryId;
+                isSmartFilter = false;
+                applyFilter();
+                drawerLayout.closeDrawer(GravityCompat.START);
+            }
+        });
         rvSidebarMenu.setAdapter(sidebarAdapter);
         rvSidebarMenu.setLayoutManager(new LinearLayoutManager(this));
 
@@ -88,52 +111,113 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(taskAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Thiết lập sự kiện click vào task để mở màn hình chi tiết
         taskAdapter.setOnTaskClickListener(task -> {
             openTaskDetail(task.getId());
         });
 
-        // Tích hợp Swipe cho Task List
         setupSwipe(recyclerView);
 
-        // 3. Observe Categories để cập nhật Sidebar
+        // 3. Observe Categories & Tasks
         taskViewModel.getAllCategories().observe(this, categories -> {
-            List<SidebarItem> sidebarItems = new ArrayList<>();
-            sidebarItems.add(new SidebarItem.Header("LISTS"));
-
-            for (ListCategory category : categories) {
-                sidebarItems.add(new SidebarItem.MenuItem(category, 0)); // Tạm thời để taskCount = 0
-            }
-
-            sidebarAdapter.submitList(sidebarItems);
+            this.allCategories = categories;
+            updateSidebar();
         });
 
-        // 4. Observe Tasks
         taskViewModel.getAllTasks().observe(this, tasks -> {
-            taskAdapter.submitTaskList(tasks);
+            this.fullTaskList = tasks;
+            updateSidebar();
+            applyFilter();
         });
 
-        // 5. Điều khiển Drawer qua nút Menu
+        // 5. Các nút điều khiển khác
         ImageView btnMenu = findViewById(R.id.btnMenu);
         btnMenu.setOnClickListener(v -> {
             drawerLayout.openDrawer(GravityCompat.START);
         });
 
-        // Nút Tùy chỉnh (btnTune) ở Header
-        ImageView btnTune = findViewById(R.id.btnTune);
-        if (btnTune != null) {
-            btnTune.setOnClickListener(v -> {
-                Intent intent = new Intent(this, ManageListTagActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        // 6. Fab Add Task
         View fab = findViewById(R.id.fabAdd);
         fab.setOnClickListener(v -> {
             AddTaskBottomSheetFragment addTaskSheet = new AddTaskBottomSheetFragment();
             addTaskSheet.show(getSupportFragmentManager(), "AddTaskBottomSheet");
         });
+    }
+
+    private void updateSidebar() {
+        List<SidebarItem> sidebarItems = taskViewModel.generateSidebarItems(fullTaskList, allCategories);
+        sidebarAdapter.submitList(sidebarItems);
+        sidebarAdapter.setSelectedItemId(currentFilterId);
+    }
+
+    private void applyFilter() {
+        List<Task> filteredList;
+
+        if (isSmartFilter) {
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
+            long todayStart = cal.getTimeInMillis();
+
+            cal.add(Calendar.DAY_OF_YEAR, 1);
+            long tomorrowStart = cal.getTimeInMillis();
+
+            cal.add(Calendar.DAY_OF_YEAR, 1);
+            long dayAfterTomorrowStart = cal.getTimeInMillis();
+
+            cal.setTimeInMillis(todayStart);
+            cal.add(Calendar.DAY_OF_YEAR, 7);
+            long next7DaysEnd = cal.getTimeInMillis();
+
+            cal.setTimeInMillis(todayStart);
+            int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+            int daysUntilNextMonday = (9 - dayOfWeek) % 7;
+            if (daysUntilNextMonday == 0) daysUntilNextMonday = 7;
+            cal.add(Calendar.DAY_OF_YEAR, daysUntilNextMonday);
+            long nextMondayStart = cal.getTimeInMillis();
+
+            filteredList = fullTaskList.stream().filter(task -> {
+                Long dueDate = task.getDueDate();
+                switch (currentFilterId) {
+                    case SidebarItem.ID_TODAY:
+                        return dueDate != null && dueDate >= todayStart && dueDate < tomorrowStart;
+                    case SidebarItem.ID_TOMORROW:
+                        return dueDate != null && dueDate >= tomorrowStart && dueDate < dayAfterTomorrowStart;
+                    case SidebarItem.ID_NEXT_7_DAYS:
+                        return dueDate != null && dueDate >= todayStart && dueDate < next7DaysEnd;
+                    case SidebarItem.ID_THIS_WEEK:
+                        return dueDate != null && dueDate >= todayStart && dueDate < nextMondayStart;
+                    case SidebarItem.ID_UNSCHEDULED:
+                        return dueDate == null;
+                    default:
+                        return true;
+                }
+            }).collect(Collectors.toList());
+        } else {
+            filteredList = fullTaskList.stream()
+                    .filter(task -> task.getListId() != null && task.getListId() == currentFilterId)
+                    .collect(Collectors.toList());
+        }
+
+        taskAdapter.submitTaskList(filteredList);
+        
+        // Cập nhật tiêu đề màn hình (nếu có TextView headerTitle)
+        TextView tvHeaderTitle = findViewById(R.id.tvHeaderTitle);
+        if (tvHeaderTitle != null) {
+            String title = "Tasks";
+            if (isSmartFilter) {
+                if (currentFilterId == SidebarItem.ID_TODAY) title = "Today";
+                else if (currentFilterId == SidebarItem.ID_TOMORROW) title = "Tomorrow";
+                else if (currentFilterId == SidebarItem.ID_NEXT_7_DAYS) title = "Next 7 Days";
+                else if (currentFilterId == SidebarItem.ID_THIS_WEEK) title = "This Week";
+                else if (currentFilterId == SidebarItem.ID_UNSCHEDULED) title = "Unscheduled";
+            } else {
+                for (ListCategory cat : allCategories) {
+                    if (cat.getId() == currentFilterId) {
+                        title = cat.getName();
+                        break;
+                    }
+                }
+            }
+            tvHeaderTitle.setText(title);
+        }
     }
 
     private void setupSwipe(RecyclerView recyclerView) {
@@ -145,15 +229,10 @@ public class MainActivity extends AppCompatActivity {
                 if (item instanceof TaskItem.TaskData) {
                     Task task = ((TaskItem.TaskData) item).getTask();
                     task.setCompleted(true);
-                    
-                    // Hiệu ứng rung nhẹ
                     recyclerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                    
                     taskViewModel.update(task);
                     Toast.makeText(MainActivity.this, "Đã hoàn thành công việc", Toast.LENGTH_SHORT).show();
                 }
-                
-                // LUÔN LUÔN thông báo notifyItemChanged để reset trạng thái vuốt (mất nền màu)
                 taskAdapter.notifyItemChanged(position);
             }
 
@@ -163,10 +242,7 @@ public class MainActivity extends AppCompatActivity {
                 TaskItem item = taskAdapter.getCurrentList().get(position);
                 if (item instanceof TaskItem.TaskData) {
                     Task task = ((TaskItem.TaskData) item).getTask();
-
-                    // Sử dụng logic tạm ẩn để tránh xung đột với LiveData
                     taskAdapter.setTaskExcluded(task.getId(), true);
-
                     Snackbar.make(recyclerView, "Đã xóa công việc", Snackbar.LENGTH_LONG)
                             .setAction("Hoàn tác", v -> {
                                 taskAdapter.setTaskExcluded(task.getId(), false);
@@ -192,9 +268,6 @@ public class MainActivity extends AppCompatActivity {
     private void openTaskDetail(int taskId) {
         TaskDetailFragment detailFragment = TaskDetailFragment.newInstance(taskId);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        
-        // Sử dụng một ID container phù hợp. Ở đây DrawerLayout là root, 
-        // nhưng chúng ta muốn đè lên nội dung chính.
         transaction.replace(android.R.id.content, detailFragment); 
         transaction.addToBackStack(null);
         transaction.commit();
