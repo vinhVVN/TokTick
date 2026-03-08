@@ -1,4 +1,4 @@
-package hcmute.edu.vn.TokTick_23110172;
+package hcmute.edu.vn.TokTick_23110172.ui.fragment;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import hcmute.edu.vn.TokTick_23110172.R;
 import hcmute.edu.vn.TokTick_23110172.adapter.TaskDetailSubtaskAdapter;
 import hcmute.edu.vn.TokTick_23110172.data.local.dao.AppDatabase;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
@@ -37,7 +38,7 @@ import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskFullDetails;
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository;
-import hcmute.edu.vn.TokTick_23110172.viewmodel.TaskViewModel;
+import hcmute.edu.vn.TokTick_23110172.ui.view.TaskViewModel;
 
 public class TaskDetailFragment extends Fragment implements TaskDetailSubtaskAdapter.OnSubtaskChangeListener {
 
@@ -164,7 +165,7 @@ public class TaskDetailFragment extends Fragment implements TaskDetailSubtaskAda
         cbMainTask.setChecked(currentTask.isCompleted());
         
         updateDateTimeDisplay();
-        updateCategoryDisplay(details.category);
+        updateCategoryDisplay(details.getCategory());
         updateTagsDisplay();
 
         subtaskAdapter.setSubtasks(currentSubtasks);

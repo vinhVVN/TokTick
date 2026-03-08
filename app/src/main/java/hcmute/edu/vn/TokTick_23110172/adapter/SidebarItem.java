@@ -49,6 +49,7 @@ public abstract class SidebarItem {
 
         @Override
         public int hashCode() {
+
             return Objects.hash(category, taskCount);
         }
     }

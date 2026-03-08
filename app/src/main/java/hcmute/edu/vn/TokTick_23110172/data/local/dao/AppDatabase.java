@@ -17,7 +17,7 @@ import hcmute.edu.vn.TokTick_23110172.data.local.entity.Tag;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.TaskTagCrossRef;
 
-@Database(entities = {Task.class, ListCategory.class, Tag.class, TaskTagCrossRef.class, SubTask.class}, version = 9, exportSchema = false)
+@Database(entities = {Task.class, ListCategory.class, Tag.class, TaskTagCrossRef.class, SubTask.class}, version = 10, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract TaskDao taskDao();

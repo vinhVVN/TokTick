@@ -40,7 +40,16 @@ public interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insertListCategory(ListCategory category);
 
-    @Query("SELECT * FROM list_categories")
+    @Update
+    void updateListCategory(ListCategory category);
+
+    @Delete
+    void deleteListCategory(ListCategory category);
+
+    @Query("SELECT * FROM list_categories WHERE id = :id")
+    LiveData<ListCategory> getListCategoryById(int id);
+
+    @Query("SELECT * FROM list_categories ORDER BY orderIndex ASC")
     LiveData<List<ListCategory>> getAllCategories();
 
     // Tag related methods

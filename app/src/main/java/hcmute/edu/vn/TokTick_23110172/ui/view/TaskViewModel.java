@@ -1,4 +1,4 @@
-package hcmute.edu.vn.TokTick_23110172.viewmodel;
+package hcmute.edu.vn.TokTick_23110172.ui.view;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
@@ -39,6 +39,22 @@ public class TaskViewModel extends ViewModel {
 
     public LiveData<List<Tag>> getAllTags() {
         return allTags;
+    }
+
+    public void updateListCategories(List<ListCategory> categories) {
+        repository.updateListCategories(categories);
+    }
+
+    public LiveData<ListCategory> getListCategoryById(int id) {
+        return repository.getListCategoryById(id);
+    }
+
+    public void updateListCategory(ListCategory category) {
+        repository.updateListCategory(category);
+    }
+
+    public void deleteListCategory(ListCategory category) {
+        repository.deleteListCategory(category);
     }
 
     public LiveData<List<Task>> getTasksByListId(int listId) {

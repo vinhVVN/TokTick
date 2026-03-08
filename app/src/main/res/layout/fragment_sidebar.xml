@@ -7,6 +7,8 @@
     android:background="@color/white">
 
     <!-- RecyclerView chiếm toàn bộ phần trên -->
+
+    <!-- Đường kẻ ngang mỏng phân cách Footer -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvSidebarMenu"
         android:layout_width="0dp"
@@ -16,11 +18,12 @@
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toTopOf="@+id/dividerFooter"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
         tools:listitem="@layout/item_sidebar_menu" />
 
-    <!-- Đường kẻ ngang mỏng phân cách Footer -->
     <View
         android:id="@+id/dividerFooter"
         android:layout_width="match_parent"

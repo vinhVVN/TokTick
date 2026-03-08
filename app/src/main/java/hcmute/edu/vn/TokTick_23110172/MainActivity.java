@@ -1,8 +1,8 @@
 package hcmute.edu.vn.TokTick_23110172;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -32,10 +32,12 @@ import hcmute.edu.vn.TokTick_23110172.data.local.dao.AppDatabase;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.ListCategory;
 import hcmute.edu.vn.TokTick_23110172.data.local.entity.Task;
 import hcmute.edu.vn.TokTick_23110172.repository.TaskRepository;
-import hcmute.edu.vn.TokTick_23110172.viewmodel.AddListDialogFragment;
-import hcmute.edu.vn.TokTick_23110172.viewmodel.AddTagDialogFragment;
-import hcmute.edu.vn.TokTick_23110172.viewmodel.AddTaskBottomSheetFragment;
-import hcmute.edu.vn.TokTick_23110172.viewmodel.TaskViewModel;
+import hcmute.edu.vn.TokTick_23110172.ui.fragment.ManageListTagActivity;
+import hcmute.edu.vn.TokTick_23110172.ui.fragment.TaskDetailFragment;
+import hcmute.edu.vn.TokTick_23110172.ui.view.AddListDialogFragment;
+import hcmute.edu.vn.TokTick_23110172.ui.view.AddTagDialogFragment;
+import hcmute.edu.vn.TokTick_23110172.ui.view.AddTaskBottomSheetFragment;
+import hcmute.edu.vn.TokTick_23110172.ui.view.TaskViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -74,7 +76,8 @@ public class MainActivity extends AppCompatActivity {
         ImageView ivSettings = findViewById(R.id.ivSettings);
         if (ivSettings != null) {
             ivSettings.setOnClickListener(v -> {
-                Toast.makeText(this, "Tính năng Tùy chỉnh đang phát triển", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, ManageListTagActivity.class);
+                startActivity(intent);
                 drawerLayout.closeDrawer(GravityCompat.START);
             });
         }
@@ -115,6 +118,15 @@ public class MainActivity extends AppCompatActivity {
         btnMenu.setOnClickListener(v -> {
             drawerLayout.openDrawer(GravityCompat.START);
         });
+
+        // Nút Tùy chỉnh (btnTune) ở Header
+        ImageView btnTune = findViewById(R.id.btnTune);
+        if (btnTune != null) {
+            btnTune.setOnClickListener(v -> {
+                Intent intent = new Intent(this, ManageListTagActivity.class);
+                startActivity(intent);
+            });
+        }
 
         // 6. Fab Add Task
         View fab = findViewById(R.id.fabAdd);

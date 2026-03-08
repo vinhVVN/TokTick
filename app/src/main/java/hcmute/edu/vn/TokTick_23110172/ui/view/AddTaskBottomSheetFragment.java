@@ -1,4 +1,4 @@
-package hcmute.edu.vn.TokTick_23110172.viewmodel;
+package hcmute.edu.vn.TokTick_23110172.ui.view;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;

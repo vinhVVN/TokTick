@@ -112,15 +112,9 @@ public class TaskRepository {
     public void updateTaskFullDetails(Task task, List<SubTask> subTasks, List<Tag> tags) {
         executorService.execute(() -> {
             taskDao.updateTask(task);
-            
-            // Cập nhật subtasks (thường là xóa rồi insert lại hoặc logic phức tạp hơn)
-            // Ở đây insertSubTasks dùng REPLACE, nhưng nếu có subtask bị xóa thì sao?
-            // Tạm thời chỉ insert/update.
             if (subTasks != null) {
                 taskDao.insertSubTasks(subTasks);
             }
-
-            // Cập nhật tags: xóa cũ, thêm mới
             taskDao.deleteTagsForTask(task.getId());
             if (tags != null) {
                 for (Tag tag : tags) {
@@ -136,6 +130,26 @@ public class TaskRepository {
 
     public void insertListCategory(ListCategory category) {
         executorService.execute(() -> taskDao.insertListCategory(category));
+    }
+
+    public void updateListCategory(ListCategory category) {
+        executorService.execute(() -> taskDao.updateListCategory(category));
+    }
+
+    public void deleteListCategory(ListCategory category) {
+        executorService.execute(() -> taskDao.deleteListCategory(category));
+    }
+
+    public LiveData<ListCategory> getListCategoryById(int id) {
+        return taskDao.getListCategoryById(id);
+    }
+
+    public void updateListCategories(List<ListCategory> categories) {
+        executorService.execute(() -> {
+            for (ListCategory category : categories) {
+                taskDao.updateListCategory(category);
+            }
+        });
     }
 
     public void insertTag(Tag tag) {

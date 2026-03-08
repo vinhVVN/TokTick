@@ -10,11 +10,13 @@ public class ListCategory {
     private String name;         // Ví dụ: "Work Tasks", "Today"
     private String iconName;     // Lưu tên icon để hiển thị (VD: "ic_work")
     private boolean isSmartList;  // True nếu là Today/Next 7 Days, False nếu là List tự tạo
+    private int orderIndex;      // Thứ tự hiển thị
 
     public ListCategory(String name, String iconName, boolean isSmartList) {
         this.name = name;
         this.iconName = iconName;
         this.isSmartList = isSmartList;
+        this.orderIndex = 0;
     }
 
     // Default constructor for Room
@@ -50,5 +52,13 @@ public class ListCategory {
 
     public void setSmartList(boolean smartList) {
         isSmartList = smartList;
+    }
+
+    public int getOrderIndex() {
+        return orderIndex;
+    }
+
+    public void setOrderIndex(int orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }

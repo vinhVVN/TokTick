@@ -14,9 +14,7 @@ import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-/**
- * Callback class to handle Swipe actions (Delete and Complete) for Task RecyclerView.
- */
+
 public class TaskSwipeCallback extends ItemTouchHelper.SimpleCallback {
 
     public interface SwipeListener {
@@ -30,12 +28,11 @@ public class TaskSwipeCallback extends ItemTouchHelper.SimpleCallback {
     private final Paint paint = new Paint();
 
     public TaskSwipeCallback(Context context, SwipeListener listener) {
-        // Support Left to Right (RIGHT) and Right to Left (LEFT) swipes
+
         super(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
         this.listener = listener;
 
-        // Load icons and tint them white. 
-        // Using standard Android drawables as fallback; ideally, replace with custom assets.
+
         Drawable check = ContextCompat.getDrawable(context, android.R.drawable.checkbox_on_background);
         Drawable delete = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_delete);
 
